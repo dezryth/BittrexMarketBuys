@@ -15,7 +15,7 @@ from datetime import datetime
 from pushover import init, Client
 
 # Enable Push notifications
-PushoverEnabled = 1
+PushoverEnabled = 0
 
 # SET IMPORTANT VARIABLES
 testMode = True  # Set to false when you're ready for real transactions
@@ -49,13 +49,15 @@ if (dateDiff != -1 and dateDiff <= purchaseFrequencyDays):
 # Get config values
 config = configparser.ConfigParser()
 config.read("config.ini")
-PushoverToken = config["DEFAULT"]["PushoverToken"]
-PushoverUserKey = config["DEFAULT"]["PushoverUserKey"]
 BittrexKey = config["DEFAULT"]["BittrexKey"]
 BittrexSecret = config["DEFAULT"]["BittrexSecret"]
 
 # Initialize Pushover for notifications
-init(PushoverToken)
+if (PushoverEnabled):
+    PushoverToken = config["DEFAULT"]["PushoverToken"]
+    PushoverUserKey = config["DEFAULT"]["PushoverUserKey"]
+    init(PushoverToken)
+
 
 # Variables
 apisign = ''
