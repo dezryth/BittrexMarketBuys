@@ -4,16 +4,14 @@ import time
 from datetime import datetime
 from trade import trade
 
-# Enable Push notifications
-PushoverEnabled = 0
-
 # Get config values
 config = configparser.ConfigParser()
 config.read("config.ini")
 BittrexKey = config["DEFAULT"]["BittrexKey"]
 BittrexSecret = config["DEFAULT"]["BittrexSecret"]
 
-# Initialize Pushover for notifications
+# Initialize Pushover for notifications. 
+PushoverEnabled = 1
 if (PushoverEnabled):
     PushoverToken = config["DEFAULT"]["PushoverToken"]
     PushoverUserKey = config["DEFAULT"]["PushoverUserKey"]
@@ -22,11 +20,11 @@ if (PushoverEnabled):
 global testMode
 testMode = True  # Set to false when you're ready for real transactions
 
-# Add all desired trades to a list of trades.
+# Add all desired trades to a list of trades. Remove Pushover arguments if you are not using it.
 trades = []
 # cc, fiat, fundsToSpend
-trades.append(trade('DCR', 'USD', 50, BittrexKey, BittrexSecret, testMode=True))
-trades.append(trade('ETC', 'USD', 20, BittrexKey, BittrexSecret, testMode=True))
+trades.append(trade('DCR', 'USD', 50, BittrexKey, BittrexSecret, PushoverToken, PushoverUserKey, testMode=True))
+trades.append(trade('ETC', 'USD', 20, BittrexKey, BittrexSecret, PushoverToken, PushoverUserKey, testMode=True))
 
 # Purchase if enough funds are available
 print('-------------------------------------------------')

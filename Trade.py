@@ -182,9 +182,4 @@ class trade:
         }
 
         with open('tradehistory.txt', 'a+') as outfile:
-            # try:
-            #   existingHistory = outfile.readlines()
-            #   updatedHistory = existingHistory + '\n' + str(trade)
-            #   print(updatedHistory, file=outfile)
-            # except:
           print(str(trade), file=outfile)
