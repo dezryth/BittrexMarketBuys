@@ -2,7 +2,7 @@ import configparser
 import datetime
 import time
 from datetime import datetime
-from Trade import Trade
+from trade import trade
 
 # Enable Push notifications
 PushoverEnabled = 0
@@ -25,8 +25,8 @@ testMode = True  # Set to false when you're ready for real transactions
 # Add all desired trades to a list of trades.
 trades = []
 # cc, fiat, fundsToSpend
-trades.append(Trade('DCR', 'USD', 50, BittrexKey, BittrexSecret, testMode=True))
-trades.append(Trade('ETC', 'USD', 20, BittrexKey, BittrexSecret, testMode=True))
+trades.append(trade('DCR', 'USD', 50, BittrexKey, BittrexSecret, testMode=True))
+trades.append(trade('ETC', 'USD', 20, BittrexKey, BittrexSecret, testMode=True))
 
 # Purchase if enough funds are available
 print('-------------------------------------------------')

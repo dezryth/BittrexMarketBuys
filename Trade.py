@@ -21,7 +21,7 @@ from pushover import init, Client
 # Includes all methods necessary to submit a trade.
 
 
-class Trade:
+class trade:
     def __init__(self, cc, fiat, fundsToSpend, BittrexKey, BittrexSecret,
                  PushoverToken=None, PushoverUserKey=None, testMode=True):
         self.cc = cc
@@ -161,7 +161,7 @@ class Trade:
                 print('Buy order failed. Reason: ' + response["code"])
         else:
             print('**TEST MODE**')
-            self.saveTrade('Bought', quantity, askPrice, total, testMode)
+            self.saveTrade('Bought', cc, quantity, askPrice, total, testMode)
             self.PushoverNotify('**TEST MODE**: Bought ' + str(quantity) + str(cc)
                                 + ' for $' + str(round(total, 2)), cc + ' Purchase')
 
