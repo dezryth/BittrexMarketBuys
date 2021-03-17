@@ -1,2 +1,3 @@
 config.ini
-lasttrade.txt
+tradehistory.txt
+*.pyc
