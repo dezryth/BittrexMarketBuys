@@ -15,7 +15,7 @@ from datetime import datetime
 from pushover import init, Client
 
 # Enable Push notifications
-PushoverEnabled = 0
+PushoverEnabled = 1
 
 # SET IMPORTANT VARIABLES
 testMode = True  # Set to false when you're ready for real transactions
@@ -24,6 +24,7 @@ fiat = 'USD'  # What you're using to buy the cryptocurrency
 market = cc + '-' + fiat  # The market on Bittrex e.g DCR-USD
 fundsToSpend = 50  # Amount of funds to spend each time this script runs
 purchaseFrequencyDays = 5  # Number of days to wait before another purchase
+exchangeHoldingsLimit = 10 # Amount of cc to keep on the exchange before initiating a withdrawal
 
 # Get last trade date if it exists from lasttrade.txt
 try:
@@ -51,6 +52,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 BittrexKey = config["DEFAULT"]["BittrexKey"]
 BittrexSecret = config["DEFAULT"]["BittrexSecret"]
+Address = config["DEFAULT"]["Address"]
 
 # Initialize Pushover for notifications
 if (PushoverEnabled):
@@ -163,6 +165,35 @@ def postOrder(market, direction, type, timeInForce, quantity):
     jsonStr = json.loads(response.text)
     return jsonStr
 
+def postWithdrawal(currency, quantity):
+  "POST /withdrawals"
+  timestamp = str(now_milliseconds())
+  uri = ('https://api.bittrex.com/v3/withdrawals')
+  method = "POST"
+  withdrawalRequest = {
+        "currencySymbol": currency,
+        "quantity": quantity,
+        "cryptoAddress": Address
+  }
+  withdrawalRequestJson = json.dumps(withdrawalRequest)
+  contentHash = generateHash(withdrawalRequestJson)
+  subaccountId = ""
+  preSign = timestamp + uri + method + contentHash + subaccountId
+  signature = signMessage(preSign)
+
+  headers = {
+      'content-type': 'application/json',
+      'Api-Key': BittrexKey,
+      'Api-Timestamp': timestamp,
+      'Api-Content-Hash': contentHash,
+      'Api-Signature': signature
+  }
+
+  response = requests.post(uri, data=withdrawalRequestJson, headers=headers)
+  print(response.text)
+  jsonStr = json.loads(response.text)
+  return jsonStr
+
 ######################################################################
 # Methods to take advantage of Bittrex API methods
 
@@ -182,7 +213,7 @@ def buyCryptocurrency(orderAmount, askPrice, testMode):
             saveTrade('Bought', quantity, askPrice, total)
             if (PushoverEnabled):
                 Client(PushoverUserKey).send_message('Bought ' + str(quantity) + str(cc)
-                                                     + ' for $' + str(round(total, 2)), title=cc + ' Purchase')
+                                                     + ' for $' + str(round(total, 2)) + '\n' + str(response), title=cc + ' Purchase')
         else:
             if (PushoverEnabled):
                 Client(PushoverUserKey).send_message('Buy order failed. Reason: ' + str(response),
@@ -237,3 +268,14 @@ else:
         print("Not enough available funds for order.")
 
 print('-------------------------------------------------')
+
+
+# Initiate Withdraw if current holdings on exchange exceed user defined limit.
+availableCryptocurrency = float(getAvailableHoldings(cc))
+if (availableCryptocurrency > exchangeHoldingsLimit):
+    response = postWithdrawal(cc, availableCryptocurrency)
+    if response.get("id"):
+      if (PushoverEnabled):
+          Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(cc) + ' was withdrawn to your wallet.\n' + 
+                                                                    str(response), title=str(cc) + ' Withdrawn From Exchange')
+          print(str(availableCryptocurrency) + str(cc) + ' was withdrawn to your wallet.')
