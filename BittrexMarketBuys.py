@@ -261,6 +261,12 @@ print('Last Ask: $' + str(lastAsk))
 # Check for available funds and initiate purchase
 if (availableFunds > fundsToSpend):
     buyCryptocurrency(fundsToSpend, lastAsk, testMode)
+    if ((availableFunds - fundsToSpend) < fundsToSpend):
+      if ((availableFunds - fundsToSpend) < fundsToSpend):
+        if (PushoverEnabled):
+          Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(fiat)
+            + ' to Bittrex Wallet.', title='Deposit more ' + str(fiat) + ' to Bittrex Wallet')
+          print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(fiat) + ' to continue market purchases.')
 else:
     if (PushoverEnabled):
         Client(PushoverUserKey).send_message('Not enough available funds for ' + str(cc)
