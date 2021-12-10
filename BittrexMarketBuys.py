@@ -275,6 +275,8 @@ else:
 
 print('-------------------------------------------------')
 
+# Ensure order has had some time to be fulfilled
+time.sleep(10)
 
 # Initiate Withdraw if current holdings on exchange exceed user defined limit.
 availableCryptocurrency = float(getAvailableHoldings(cc))
