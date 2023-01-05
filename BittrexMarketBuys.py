@@ -193,7 +193,8 @@ def placeOrder(orderAmount, askPrice, market):
     else:
       roundPlace = 8
     print('Buying ' + str(quantity) + ' ' + target + ' for a total of '
-          + '{:.{roundPlace}f}'.format(total, roundPlace = roundPlace)  + ' ' + source + ' at ' + '{:.{roundPlace}f}'.format(askPrice, roundPlace = roundPlace) + ' ' + source + ' each.')
+          + '{:.{roundPlace}f}'.format(total, roundPlace = roundPlace)  + ' ' + source + ' at ' 
+          + '{:.{roundPlace}f}'.format(askPrice, roundPlace = roundPlace) + ' ' + source + ' each.')
 
     if (testMode == False):
         response = postOrder(market, 'BUY', 'MARKET',
@@ -268,7 +269,7 @@ if (availableFunds > fundsToSpend):
     if ((availableFunds - fundsToSpend) < fundsToSpend):      
       if (PushoverEnabled):
         Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source)
-          + ' to Bittrex Wallet.', title='Deposit more ' + source + ' to Bittrex Wallet')
+                                            + ' to Bittrex Wallet.', title='Deposit more ' + source + ' to Bittrex Wallet')
         print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + source + ' to Bittrex Wallet.')
 else:
     if (PushoverEnabled):
@@ -288,6 +289,6 @@ if (exchangeWithdrawalsEnabled and Address):
       response = postWithdrawal(target, availableCryptocurrency)
       if response.get("id"):
         if (PushoverEnabled):
-            Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.\n' + 
-                                                                      str(response), title=str(target) + ' Withdrawn From Exchange')
+            Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.\n' 
+                                                + str(response), title=str(target) + ' Withdrawn From Exchange')
             print(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.')
