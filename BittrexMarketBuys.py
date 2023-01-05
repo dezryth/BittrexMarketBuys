@@ -23,29 +23,7 @@ target = 'DCR'  # Ticker for the cryptocurrency you are buying
 source = 'USD'  # What you're using to buy the cryptocurrency
 market = target + '-' + source  # The market on Bittrex e.g DCR-USD
 fundsToSpend = 50  # Amount of funds to spend each time this script runs
-purchaseFrequencyDays = 5  # Number of days to wait before another purchase
 exchangeHoldingsLimit = 10 # Amount of target to keep on the exchange before initiating a withdrawal
-
-# Get last trade date if it exists from lasttrade.txt
-try:
-    with open('lasttrade.txt') as json_file:
-        data = json.load(json_file)
-    for x in data['data']:
-        # This converts the json string back to a datetime object
-        lastTradeDate = datetime.strptime(
-            x['tradeTime'], '%Y-%m-%d %H:%M:%S.%f')
-    # Determine if time to purchase again
-    global dateDiff
-    dateDiff = (datetime.now() - lastTradeDate).days
-except:
-    dateDiff = -1  # This is the first run/lasttrade.txt doesn't exist
-    pass
-
-# If not the first run, check if it's been enough days since last purchase or exit
-if (dateDiff != -1 and dateDiff <= purchaseFrequencyDays):
-    print("It has been " + str(dateDiff) +
-          " days since the last purchase. Exiting.")
-    sys.exit()
 
 # Get config values
 config = configparser.ConfigParser()
@@ -60,9 +38,7 @@ if (PushoverEnabled):
     PushoverUserKey = config["DEFAULT"]["PushoverUserKey"]
     init(PushoverToken)
 
-
 # Variables
-apisign = ''
 headers = {'content-type': 'application/json'}
 
 
