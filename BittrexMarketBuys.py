@@ -18,12 +18,18 @@ from pushover import init, Client
 PushoverEnabled = 1
 
 # SET IMPORTANT VARIABLES
-testMode = True  # Set to false when you're ready for real transactions
-target = 'DCR'  # Ticker for the cryptocurrency you are buying
+testMode = True # Set to false when you're ready for real transactions
+target = 'DCR'  # Ticker for the ultimate cryptocurrency you are buying
 source = 'USD'  # What you're using to buy the cryptocurrency
-market = target + '-' + source  # The market on Bittrex e.g DCR-USD
-fundsToSpend = 50  # Amount of funds to spend each time this script runs
-exchangeHoldingsLimit = 10 # Amount of target to keep on the exchange before initiating a withdrawal
+targetMarket = target + '-' + source  # The market to trade source for target on Bittrex e.g DCR-USD
+fundsToSpend = 5  # Number of units of source to spend to trade each time this script runs
+exchangeWithdrawalsEnabled = False # Enable to automatically withdraw from the exchange once you reach the limit - NYKNYC!
+exchangeHoldingsLimit = 10 # Amount of target to keep on the exchange before initiating a withdrawal if enabled
+buyOnBTCMarket = True # This will place a spot market buy trade for BTC with source before purchasing the target asset with BTC
+btcMarket = 'BTC' + '-' + source # The market to trade source for BTC if enabled as an intermediary step.
+if (buyOnBTCMarket == True):
+  targetMarket = target + '-' + 'BTC'
+
 
 # Get config values
 config = configparser.ConfigParser()
@@ -174,22 +180,30 @@ def postWithdrawal(currency, quantity):
 # Methods to take advantage of Bittrex API methods
 
 
-def buyCryptocurrency(orderAmount, askPrice, testMode):
+def placeOrder(orderAmount, askPrice, market):
     "Generate market buy at asking price"
     quantity = orderAmount / askPrice
     quantity = round(quantity, 8)
     total = round(quantity * askPrice, 8)
-    print('Buying ' + str(quantity) + ' ' + str(target) + ' for a total of $'
-          + str(round(total, 2)) + ' at $' + str(round(askPrice, 2)) + ' each.')
+    assets = market.split('-')    
+    target = assets[0]
+    source = assets[1]
+    if (source == 'USD'):
+      roundPlace = 2 
+    else:
+      roundPlace = 8
+    print('Buying ' + str(quantity) + ' ' + target + ' for a total of '
+          + '{:.{roundPlace}f}'.format(total, roundPlace = roundPlace)  + ' ' + source + ' at ' + '{:.{roundPlace}f}'.format(askPrice, roundPlace = roundPlace) + ' ' + source + ' each.')
 
-    if (testMode != True):
+    if (testMode == False):
         response = postOrder(market, 'BUY', 'MARKET',
                              'IMMEDIATE_OR_CANCEL', quantity)
         if response.get("id"):
             saveTrade('Bought', quantity, askPrice, total)
             if (PushoverEnabled):
-                Client(PushoverUserKey).send_message('Bought ' + str(quantity) + str(target)
-                                                     + ' for $' + str(round(total, 2)) + '\n' + str(response), title=target + ' Purchase')
+              Client(PushoverUserKey).send_message('Bought ' + str(quantity) + ' ' + str(target)
+                                                    + ' for a total of ' + '{:.{roundPlace}f}'.format(total, roundPlace = roundPlace) + ' ' + source + ' at ' 
+                                                    + '{:.{roundPlace}f}'.format(askPrice, roundPlace = roundPlace) + ' ' + source + ' each.', title=target + ' Purchase')
         else:
             if (PushoverEnabled):
                 Client(PushoverUserKey).send_message('Buy order failed. Reason: ' + str(response),
@@ -198,9 +212,11 @@ def buyCryptocurrency(orderAmount, askPrice, testMode):
     else:
         saveTrade('Bought', quantity, askPrice, total, testMode)
         if (PushoverEnabled):
-            Client(PushoverUserKey).send_message('**TEST MODE**: Bought ' + str(quantity) + str(target)
-                                                 + ' for $' + str(round(total, 2)), title=target + ' Purchase')
-        print('**TEST MODE**')
+            Client(PushoverUserKey).send_message('**TEST MODE**: Bought ' + str(quantity) + ' ' + str(target)
+                                                 + ' for a total of ' + '{:.{roundPlace}f}'.format(total, roundPlace = roundPlace) + ' ' + source + ' at ' 
+                                                 + '{:.{roundPlace}f}'.format(askPrice, roundPlace = roundPlace) + ' ' + source + ' each.', title=target + ' Purchase')
+    
+    return quantity
 
 
 def saveTrade(action, quantity, price, total, testMode=False):
@@ -219,30 +235,41 @@ def saveTrade(action, quantity, price, total, testMode=False):
         json.dump(data, outfile)
 
 
-# Purchase if enough funds are available
 print('-------------------------------------------------')
+if (testMode == True):
+  print('**TEST MODE**')
 print('Time: ' + str(datetime.now()))
 
 # Get available funds
-availableFunds = float(getAvailableHoldings('USD'))
+availableFunds = float(getAvailableHoldings(source))
 availableCryptocurrency = float(getAvailableHoldings(target))
-print('Available USD: $' + str(availableFunds))
+print('Available '+ source +': $' + str(availableFunds))
 print('Available ' + str(target) + ': ' + str(availableCryptocurrency))
 
-# Get latest asking price
-jsonStr = getMarket(market)
-lastAsk = float(jsonStr['askRate'])
-print('Last Ask: $' + str(lastAsk))
+# Get latest target ask price
+jsonStr = getMarket(targetMarket)
+lastTargetAsk = float(jsonStr['askRate'])
+print('Last ' + targetMarket + ' Ask: ' + str(lastTargetAsk))
 
-# Check for available funds and initiate purchase
+# Get latest BTC ask price
+jsonStr = getMarket(btcMarket)
+lastBTCAsk = float(jsonStr['askRate'])
+print('Last ' + btcMarket + ' Ask: ' + str(lastBTCAsk))
+
+# Check for available funds and initiate purchase if enough funds are available
 if (availableFunds > fundsToSpend):
-    buyCryptocurrency(fundsToSpend, lastAsk, testMode)
-    if ((availableFunds - fundsToSpend) < fundsToSpend):
-      if ((availableFunds - fundsToSpend) < fundsToSpend):
-        if (PushoverEnabled):
-          Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source)
-            + ' to Bittrex Wallet.', title='Deposit more ' + str(source) + ' to Bittrex Wallet')
-          print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source) + ' to continue market purchases.')
+    if (buyOnBTCMarket):
+      btcToSpend = placeOrder(fundsToSpend, lastBTCAsk, btcMarket)
+      # Ensure order has had some time to be fulfilled
+      time.sleep(10)
+      placeOrder(btcToSpend, lastTargetAsk, targetMarket)
+    else:
+      placeOrder(fundsToSpend, lastTargetAsk, targetMarket)
+    if ((availableFunds - fundsToSpend) < fundsToSpend):      
+      if (PushoverEnabled):
+        Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source)
+          + ' to Bittrex Wallet.', title='Deposit more ' + source + ' to Bittrex Wallet')
+        print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + source + ' to Bittrex Wallet.')
 else:
     if (PushoverEnabled):
         Client(PushoverUserKey).send_message('Not enough available funds for ' + str(target)
@@ -251,15 +278,16 @@ else:
 
 print('-------------------------------------------------')
 
-# Ensure order has had some time to be fulfilled
-time.sleep(10)
+if (exchangeWithdrawalsEnabled and Address):
+  # Initiate Withdraw if current holdings on exchange exceed user defined limit.
+  availableCryptocurrency = float(getAvailableHoldings(target))
+  if (availableCryptocurrency > exchangeHoldingsLimit):
+      # Ensure most recent order has had time to be fulfilled
+      time.sleep(10)
 
-# Initiate Withdraw if current holdings on exchange exceed user defined limit.
-availableCryptocurrency = float(getAvailableHoldings(target))
-if (availableCryptocurrency > exchangeHoldingsLimit):
-    response = postWithdrawal(target, availableCryptocurrency)
-    if response.get("id"):
-      if (PushoverEnabled):
-          Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.\n' + 
-                                                                    str(response), title=str(target) + ' Withdrawn From Exchange')
-          print(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.')
+      response = postWithdrawal(target, availableCryptocurrency)
+      if response.get("id"):
+        if (PushoverEnabled):
+            Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.\n' + 
+                                                                      str(response), title=str(target) + ' Withdrawn From Exchange')
+            print(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.')
