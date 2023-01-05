@@ -19,12 +19,12 @@ PushoverEnabled = 1
 
 # SET IMPORTANT VARIABLES
 testMode = True  # Set to false when you're ready for real transactions
-cc = 'DCR'  # Ticker for the cryptocurrency you are buying
-fiat = 'USD'  # What you're using to buy the cryptocurrency
-market = cc + '-' + fiat  # The market on Bittrex e.g DCR-USD
+target = 'DCR'  # Ticker for the cryptocurrency you are buying
+source = 'USD'  # What you're using to buy the cryptocurrency
+market = target + '-' + source  # The market on Bittrex e.g DCR-USD
 fundsToSpend = 50  # Amount of funds to spend each time this script runs
 purchaseFrequencyDays = 5  # Number of days to wait before another purchase
-exchangeHoldingsLimit = 10 # Amount of cc to keep on the exchange before initiating a withdrawal
+exchangeHoldingsLimit = 10 # Amount of target to keep on the exchange before initiating a withdrawal
 
 # Get last trade date if it exists from lasttrade.txt
 try:
@@ -203,7 +203,7 @@ def buyCryptocurrency(orderAmount, askPrice, testMode):
     quantity = orderAmount / askPrice
     quantity = round(quantity, 8)
     total = round(quantity * askPrice, 8)
-    print('Buying ' + str(quantity) + ' ' + str(cc) + ' for a total of $'
+    print('Buying ' + str(quantity) + ' ' + str(target) + ' for a total of $'
           + str(round(total, 2)) + ' at $' + str(round(askPrice, 2)) + ' each.')
 
     if (testMode != True):
@@ -212,18 +212,18 @@ def buyCryptocurrency(orderAmount, askPrice, testMode):
         if response.get("id"):
             saveTrade('Bought', quantity, askPrice, total)
             if (PushoverEnabled):
-                Client(PushoverUserKey).send_message('Bought ' + str(quantity) + str(cc)
-                                                     + ' for $' + str(round(total, 2)) + '\n' + str(response), title=cc + ' Purchase')
+                Client(PushoverUserKey).send_message('Bought ' + str(quantity) + str(target)
+                                                     + ' for $' + str(round(total, 2)) + '\n' + str(response), title=target + ' Purchase')
         else:
             if (PushoverEnabled):
                 Client(PushoverUserKey).send_message('Buy order failed. Reason: ' + str(response),
-                                                     title=cc + ' Purchase Failed')
+                                                     title=target + ' Purchase Failed')
             print('Buy order failed. Reason: ' + response["code"])
     else:
         saveTrade('Bought', quantity, askPrice, total, testMode)
         if (PushoverEnabled):
-            Client(PushoverUserKey).send_message('**TEST MODE**: Bought ' + str(quantity) + str(cc)
-                                                 + ' for $' + str(round(total, 2)), title=cc + ' Purchase')
+            Client(PushoverUserKey).send_message('**TEST MODE**: Bought ' + str(quantity) + str(target)
+                                                 + ' for $' + str(round(total, 2)), title=target + ' Purchase')
         print('**TEST MODE**')
 
 
@@ -249,9 +249,9 @@ print('Time: ' + str(datetime.now()))
 
 # Get available funds
 availableFunds = float(getAvailableHoldings('USD'))
-availableCryptocurrency = float(getAvailableHoldings(cc))
+availableCryptocurrency = float(getAvailableHoldings(target))
 print('Available USD: $' + str(availableFunds))
-print('Available ' + str(cc) + ': ' + str(availableCryptocurrency))
+print('Available ' + str(target) + ': ' + str(availableCryptocurrency))
 
 # Get latest asking price
 jsonStr = getMarket(market)
@@ -264,12 +264,12 @@ if (availableFunds > fundsToSpend):
     if ((availableFunds - fundsToSpend) < fundsToSpend):
       if ((availableFunds - fundsToSpend) < fundsToSpend):
         if (PushoverEnabled):
-          Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(fiat)
-            + ' to Bittrex Wallet.', title='Deposit more ' + str(fiat) + ' to Bittrex Wallet')
-          print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(fiat) + ' to continue market purchases.')
+          Client(PushoverUserKey).send_message('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source)
+            + ' to Bittrex Wallet.', title='Deposit more ' + str(source) + ' to Bittrex Wallet')
+          print('There will not be enough funds to complete another market purchase on the next run. Deposit more ' + str(source) + ' to continue market purchases.')
 else:
     if (PushoverEnabled):
-        Client(PushoverUserKey).send_message('Not enough available funds for ' + str(cc)
+        Client(PushoverUserKey).send_message('Not enough available funds for ' + str(target)
                                              + ' purchase!', title='Not Enough Funds')
         print("Not enough available funds for order.")
 
@@ -279,11 +279,11 @@ print('-------------------------------------------------')
 time.sleep(10)
 
 # Initiate Withdraw if current holdings on exchange exceed user defined limit.
-availableCryptocurrency = float(getAvailableHoldings(cc))
+availableCryptocurrency = float(getAvailableHoldings(target))
 if (availableCryptocurrency > exchangeHoldingsLimit):
-    response = postWithdrawal(cc, availableCryptocurrency)
+    response = postWithdrawal(target, availableCryptocurrency)
     if response.get("id"):
       if (PushoverEnabled):
-          Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(cc) + ' was withdrawn to your wallet.\n' + 
-                                                                    str(response), title=str(cc) + ' Withdrawn From Exchange')
-          print(str(availableCryptocurrency) + str(cc) + ' was withdrawn to your wallet.')
+          Client(PushoverUserKey).send_message(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.\n' + 
+                                                                    str(response), title=str(target) + ' Withdrawn From Exchange')
+          print(str(availableCryptocurrency) + str(target) + ' was withdrawn to your wallet.')
