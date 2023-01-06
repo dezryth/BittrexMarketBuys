@@ -8,9 +8,9 @@ This is a Python script for recurring market buys on [Bittrex](https://bittrex.c
 ## Features
 
 * Configure to purchase as much of whatever you want on Bittrex, as often as you want.
+* You can configure to purchase BTC first, then purchase your target cryptocurrency on the BTC market for it if you'd like.
 * Supports [Pushover](https://pushover.net "Pushover") for Push notifications to any devices you have the application installed on. Get notified whenever the script makes a trade!
-* Stores info on the last trade in a txt file to be easily human readable and to determine next purchase date. (Full history is on Bittrex, of course)
-* Automatically withdraw cryptocurrency holdings after an exchange holdings limit has been surpassed to an address of your choosing. Not your keys, not your crypto! Don't keep too much of your cryptocurrency with a third party or risk losing it.
+* Configure to automatically withdraw cryptocurrency holdings after an exchange holdings limit has been surpassed to an address of your choosing. Not your keys, not your crypto! Don't keep too much of your cryptocurrency with a third party or risk losing it.
 
 ## Getting Started
 1. Clone the repository. 
